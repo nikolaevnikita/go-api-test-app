@@ -15,9 +15,12 @@ func NewApp() *App {
 	taskRepository := repository.NewTaskInMemoryRepository()
 	taskService := services.NewTaskService(taskRepository)
 
+	userRepository := repository.NewUserInMemoryRepository()
+	userService := services.NewUserService(userRepository)
+
 	config := config.ReadConfig()
 
-	serverApi := server.New(config, taskService)
+	serverApi := server.New(config, taskService, userService)
 
 	return &App{
 		serverApi: serverApi,

@@ -13,9 +13,14 @@ type ServerApi struct {
 	server *http.Server
 	router *gin.Engine
 	taskService *services.TaskService
+	userService *services.UserService
 }
 
-func New(cfg config.Config, taskService *services.TaskService) *ServerApi {
+func New(
+	cfg config.Config, 
+	taskService *services.TaskService, 
+	userService *services.UserService,
+) *ServerApi {
 	server := http.Server{
 		Addr: fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
 	}
@@ -27,6 +32,7 @@ func New(cfg config.Config, taskService *services.TaskService) *ServerApi {
 		server: &server,
 		router: router,
 		taskService: taskService,
+		userService: userService,
 	}
 
 	serverApi.setupRoutes()
@@ -42,6 +48,8 @@ func (s *ServerApi) Start() error {
 
 func (serverApi *ServerApi) setupRoutes() {
 	router := serverApi.router
+
+	// task routes
 	task := router.Group("/task")
 	{
 		task.GET("/:id", serverApi.getTask)
@@ -50,4 +58,15 @@ func (serverApi *ServerApi) setupRoutes() {
 	}
 	router.GET("/tasks", serverApi.getTasks)
 	router.POST("/task", serverApi.createTask)
+
+	// user routes
+	user := router.Group("/user")
+	{
+		user.GET("/:id", serverApi.getUser)
+		user.PUT("/:id", serverApi.updateUserName)
+		user.DELETE("/:id", serverApi.deleteUser)
+	}
+	router.GET("/users", serverApi.getUsers)
+	router.POST("/user", serverApi.registerUser)
+
 }
