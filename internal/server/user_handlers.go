@@ -15,6 +15,7 @@ func (s *ServerApi) registerUser(c *gin.Context) {
 	}
 	registeredUser, err := s.userService.RegisterUser(user)
 	if err != nil {
+		// TODO: Обработать ошибку с использования errors.Is()
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
 	}

@@ -35,11 +35,11 @@ func (r *InMemoryRepository[T]) Get(id ItemID) (*T, error) {
 }
 
 func (r *InMemoryRepository[T]) GetAll() ([]*T, error) {
-	var tasks []*T
-	for _, task := range r.storage {
-		tasks = append(tasks, task)
+	var items []*T
+	for _, item := range r.storage {
+		items = append(items, item)
 	}
-	return tasks, nil   
+	return items, nil   
 }
 
 func (r *InMemoryRepository[T]) Create(item T) error {
