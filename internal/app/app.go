@@ -2,9 +2,13 @@ package app
 
 import (
 	"github.com/nikolaevnikita/go-api-test-app/internal/config"
+	"github.com/nikolaevnikita/go-api-test-app/internal/domain/models"
+	"github.com/nikolaevnikita/go-api-test-app/internal/logger"
 	"github.com/nikolaevnikita/go-api-test-app/internal/repository"
 	"github.com/nikolaevnikita/go-api-test-app/internal/server"
 	"github.com/nikolaevnikita/go-api-test-app/internal/services"
+
+	"context"
 )
 
 type App struct {
@@ -12,13 +16,32 @@ type App struct {
 }
 
 func NewApp() *App {
-	taskRepository := repository.NewTaskInMemoryRepository()
+	config := config.ReadConfig()
+
+	log := logger.Get(config.Debug)
+	log.Debug().Msg("logger was initialized")
+	log.Debug().Str("host", config.Host).Int("port", config.Port).Send()
+
+	var taskRepository repository.Repository[models.Task]
+
+	// разве сначала не надо сделать миграцию?
+	dbTaskRepo, err := repository.NewPostgreSQLTaskRepository(context.Background(), config.DbDsn)
+	if err != nil {
+		log.Warn().Err(err).Msg("failed to connect to db, use in-memory storage")
+		taskRepository = repository.NewTaskInMemoryRepository()
+	} else {
+		if err := repository.Migrate(config.DbDsn, config.MigratePath); err != nil {
+			log.Warn().Err(err).Msg("failed to migrate db, use in-memory storage")
+			taskRepository = repository.NewTaskInMemoryRepository()
+		} else {
+			taskRepository = dbTaskRepo
+		}
+	}
+
 	taskService := services.NewTaskService(taskRepository)
 
 	userRepository := repository.NewUserInMemoryRepository()
-	userService := services.NewUserService(userRepository)
-
-	config := config.ReadConfig()
+	userService := services.NewUserService(userRepository)	
 
 	serverApi := server.New(config, taskService, userService)
 
