@@ -5,8 +5,6 @@ import (
 	"github.com/nikolaevnikita/go-api-test-app/internal/domain/errors"
 )
 
-type ItemID = string
-
 type InMemoryRepository[T models.Identifiable] struct {
 	storage map[ItemID]*T
 }

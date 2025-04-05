@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:13
+    environment: 
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: go-api-test-app
+    ports:
+      - "5432:5432"
+
+  app: 
+    build: .
+    environment: 
+      - MIGRATE_PATH=migrations
+      - DB_DSN=postgres://user:password@db:5432/go-api-test-app?sslmode=disable
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./migrations:/root/migrations
+    depends_on:
+      - db
