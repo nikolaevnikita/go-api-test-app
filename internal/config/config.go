@@ -1,6 +1,11 @@
 package config
 
-import "flag"
+import (
+	"cmp"
+	"flag"
+	"os"
+	"strconv"
+)
 
 const (
 	defaultHost = "0.0.0.0"
@@ -17,7 +22,7 @@ type Config struct {
 	Debug bool
 }
 
-func ReadConfig() Config {
+func ReadConfig() (*Config, error) {
 	var cfg Config
 
 	flag.StringVar(&cfg.Host, "host", defaultHost, "flag for explicit server host specifications")
@@ -28,5 +33,24 @@ func ReadConfig() Config {
 
 	flag.Parse()
 
-	return cfg
+	if cfg.Host == defaultHost {
+		cfg.Host = cmp.Or(os.Getenv("HOST"), cfg.Host)
+	}
+	if cfg.Port == defaultPort {
+		defPort := strconv.Itoa(cfg.Port)
+		envPort := cmp.Or(os.Getenv("PORT"), defPort)
+		port, err := strconv.Atoi(envPort)
+		if err != nil {
+			return nil, err
+		}
+		cfg.Port = port
+	}
+	if cfg.DbDsn == defaultDbDsn {
+		cfg.DbDsn = cmp.Or(os.Getenv("DB_DSN"), cfg.DbDsn)
+	}
+	if cfg.MigratePath == defaultMigratePath {
+		cfg.MigratePath = cmp.Or(os.Getenv("MIGRATE_PATH"), cfg.MigratePath)
+	}
+
+	return &cfg, nil
 }

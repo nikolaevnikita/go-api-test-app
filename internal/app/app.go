@@ -9,6 +9,8 @@ import (
 	"github.com/nikolaevnikita/go-api-test-app/internal/services"
 
 	"context"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+    _ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 type App struct {
@@ -16,11 +18,15 @@ type App struct {
 }
 
 func NewApp() *App {
-	config := config.ReadConfig()
+	config, err := config.ReadConfig()
 
 	log := logger.Get(config.Debug)
 	log.Debug().Msg("logger was initialized")
 	log.Debug().Str("host", config.Host).Int("port", config.Port).Send()
+
+	if err != nil {
+		log.Warn().Err(err).Send()
+	}
 
 	var taskRepository repository.Repository[models.Task]
 
@@ -43,7 +49,7 @@ func NewApp() *App {
 	userRepository := repository.NewUserInMemoryRepository()
 	userService := services.NewUserService(userRepository)	
 
-	serverApi := server.New(config, taskService, userService)
+	serverApi := server.New(*config, taskService, userService)
 
 	return &App{
 		serverApi: serverApi,
