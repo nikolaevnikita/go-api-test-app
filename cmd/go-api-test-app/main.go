@@ -10,3 +10,8 @@ func main() {
 		fmt.Printf("=== App was not started due to an error: %s ===\n", err.Error())
 	}
 }
+
+// TODO:
+// 1. Добавить логирование
+// 2. Добавить авторизацию
+// 3. Связать Task c User

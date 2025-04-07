@@ -5,3 +5,11 @@ CREATE TABLE IF NOT EXISTS tasks (
     status text NOT NULL,
     UNIQUE(title)
 );
+
+CREATE TABLE IF NOT EXISTS users (
+    uid varchar(36) NOT NULL PRIMARY KEY,
+    name text NOT NULL,
+    email text NOT NULL,
+    password text NOT NULL,
+    UNIQUE(email)
+);

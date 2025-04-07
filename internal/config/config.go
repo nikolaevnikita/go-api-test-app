@@ -5,6 +5,8 @@ import (
 	"flag"
 	"os"
 	"strconv"
+
+	"github.com/nikolaevnikita/go-api-test-app/internal/logger"
 )
 
 const (
@@ -22,7 +24,7 @@ type Config struct {
 	Debug bool
 }
 
-func ReadConfig() (*Config, error) {
+func ReadConfig() *Config {
 	var cfg Config
 
 	flag.StringVar(&cfg.Host, "host", defaultHost, "flag for explicit server host specifications")
@@ -37,13 +39,16 @@ func ReadConfig() (*Config, error) {
 		cfg.Host = cmp.Or(os.Getenv("HOST"), cfg.Host)
 	}
 	if cfg.Port == defaultPort {
-		defPort := strconv.Itoa(cfg.Port)
-		envPort := cmp.Or(os.Getenv("PORT"), defPort)
-		port, err := strconv.Atoi(envPort)
+		envPortValue := os.Getenv("PORT")
+		envPort, err := strconv.Atoi(envPortValue)
 		if err != nil {
-			return nil, err
+			if envPortValue != "" {
+				log := logger.Get()
+				log.Debug().Err(err).Str("PORT", envPortValue).Msg("incorrect PORT environment variable")
+			}
+		} else {
+			cfg.Port = envPort
 		}
-		cfg.Port = port
 	}
 	if cfg.DbDsn == defaultDbDsn {
 		cfg.DbDsn = cmp.Or(os.Getenv("DB_DSN"), cfg.DbDsn)
@@ -52,5 +57,5 @@ func ReadConfig() (*Config, error) {
 		cfg.MigratePath = cmp.Or(os.Getenv("MIGRATE_PATH"), cfg.MigratePath)
 	}
 
-	return &cfg, nil
+	return &cfg
 }

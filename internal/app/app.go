@@ -18,35 +18,13 @@ type App struct {
 }
 
 func NewApp() *App {
-	config, err := config.ReadConfig()
+	config := config.ReadConfig()
+	
+	setupLogger(config)
 
-	log := logger.Get(config.Debug)
-	log.Debug().Msg("logger was initialized")
-	log.Debug().Str("host", config.Host).Int("port", config.Port).Send()
-
-	if err != nil {
-		log.Warn().Err(err).Send()
-	}
-
-	var taskRepository repository.Repository[models.Task]
-
-	// разве сначала не надо сделать миграцию?
-	dbTaskRepo, err := repository.NewPostgreSQLTaskRepository(context.Background(), config.DbDsn)
-	if err != nil {
-		log.Warn().Err(err).Msg("failed to connect to db, use in-memory storage")
-		taskRepository = repository.NewTaskInMemoryRepository()
-	} else {
-		if err := repository.Migrate(config.DbDsn, config.MigratePath); err != nil {
-			log.Warn().Err(err).Msg("failed to migrate db, use in-memory storage")
-			taskRepository = repository.NewTaskInMemoryRepository()
-		} else {
-			taskRepository = dbTaskRepo
-		}
-	}
+	taskRepository, userRepository := provideRepositories(config)
 
 	taskService := services.NewTaskService(taskRepository)
-
-	userRepository := repository.NewUserInMemoryRepository()
 	userService := services.NewUserService(userRepository)	
 
 	serverApi := server.New(*config, taskService, userService)
@@ -61,4 +39,50 @@ func (app *App) Start() error {
 		return err
 	}
 	return nil
+}
+
+// MARK: Private methods
+
+func setupLogger(config *config.Config) {
+	log := logger.Get(config.Debug)
+	log.Debug().Msg("logger was initialized")
+	log.Debug().Str("host", config.Host).Int("port", config.Port).Send()
+}
+
+func provideRepositories(config *config.Config) (repository.Repository[models.Task], repository.Repository[models.User]) {
+	log := logger.Get()
+	
+	var taskRepository repository.Repository[models.Task]
+	var userRepository repository.Repository[models.User]
+
+	// Try to use DB repositories
+	if err := repository.Migrate(config.DbDsn, config.MigratePath); err != nil {
+		log.Warn().Err(err).Msg("failed to migrate db")
+	} else {
+		dbTaskRepo, err := repository.NewPostgreSQLTaskRepository(context.Background(), config.DbDsn)
+		if err != nil {
+			log.Warn().Err(err).Msg("failed to connect to task db")
+		} else {
+			taskRepository = dbTaskRepo
+		}
+
+		dbUserRepo, err := repository.NewPostgreSQLUserRepository(context.Background(), config.DbDsn)
+		if err != nil {
+			log.Warn().Err(err).Msg("failed to connect to user db")
+		} else {
+			userRepository = dbUserRepo
+		}
+	}
+
+	// If DB usage failed - use InMemory repositories
+	if taskRepository == nil {
+		log.Warn().Msg("use in-memory task storage")
+		taskRepository = repository.NewTaskInMemoryRepository()
+	}
+	if userRepository == nil {
+		log.Warn().Msg("use in-memory user storage")
+		userRepository = repository.NewUserInMemoryRepository()
+	}
+
+	return taskRepository, userRepository
 }
