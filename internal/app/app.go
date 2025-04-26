@@ -17,9 +17,7 @@ type App struct {
 	serverApi *server.ServerApi
 }
 
-func NewApp() *App {
-	config := config.ReadConfig()
-	
+func NewApp(config *config.Config) *App {
 	setupLogger(config)
 
 	taskRepository, userRepository := provideRepositories(config)

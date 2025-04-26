@@ -2,8 +2,10 @@ package repository
 
 import (
 	"github.com/nikolaevnikita/go-api-test-app/internal/domain/models"
+	projectErrors "github.com/nikolaevnikita/go-api-test-app/internal/domain/errors"
 
 	"context"
+	"errors"
 	"time"
 	"github.com/jackc/pgx/v5"
 )
@@ -30,7 +32,6 @@ func NewPostgreSQLTaskRepository(ctx context.Context, connString string) (*Postg
 // MARK: CRUD operations
 
 func (r *PostgreSQLTaskRepository) Get(id ItemID) (*models.Task, error) {
-	// при отстутсвии айдишника в бд - должна выдавать ошибку
 	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer cancel()
 
@@ -39,6 +40,9 @@ func (r *PostgreSQLTaskRepository) Get(id ItemID) (*models.Task, error) {
 	var task models.Task
 	err := row.Scan(&task.TID, &task.Title, &task.Description, &task.Status)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			err = projectErrors.ErrNotFound
+		}
 		return nil, err
 	}
 
