@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:13
+    environment: 
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: go-api-test-app
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d go-api-test-app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  app: 
+    build: .
+    environment: 
+      - MIGRATE_PATH=migrations
+      - DB_DSN=postgres://user:password@db:5432/go-api-test-app?sslmode=disable
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./migrations:/root/migrations
+    depends_on:
+      db:
+        condition: service_healthy
