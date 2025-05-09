@@ -49,6 +49,9 @@ func (s *ServerApi) Start() error {
 func (serverApi *ServerApi) setupRoutes() {
 	router := serverApi.router
 
+	router.Use(GzipDecompressMiddleware())
+	router.Use(GzipCompressMiddleware())
+
 	// task routes
 	task := router.Group("/task")
 	{
