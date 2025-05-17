@@ -1,14 +1,17 @@
 package services
 
 import (
+	"context"
+
 	"github.com/nikolaevnikita/go-api-test-app/internal/domain/errors"
 	"github.com/nikolaevnikita/go-api-test-app/internal/domain/models"
 	"github.com/nikolaevnikita/go-api-test-app/internal/repository"
 
+	"fmt"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-	"fmt"
 )
 
 type UserService struct {
@@ -93,4 +96,9 @@ func (us *UserService) DeleteUser(uID string) error {
 	return nil
 }
 
+// MARK: Stop
+
+func (us *UserService) Stop(ctx context.Context) error {
+	return us.repository.Stop(ctx)
+}
 

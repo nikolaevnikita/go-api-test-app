@@ -1,17 +1,29 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/nikolaevnikita/go-api-test-app/internal/app"
 	"github.com/nikolaevnikita/go-api-test-app/internal/config"
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	go gracefulShutdown(cancel)
+
+
 	config := config.ReadConfig()
-	if err := app.NewApp(config).Start(); err != nil {
-		fmt.Printf("=== App was not started due to an error: %s ===\n", err.Error())
-	}
+	app.NewApp(config).Start(ctx)
+}
+
+func gracefulShutdown(cancel context.CancelFunc) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	<-sigChan
+	cancel()
 }
 
 // TODO:

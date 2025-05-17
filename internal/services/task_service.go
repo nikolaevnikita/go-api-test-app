@@ -1,8 +1,10 @@
 package services
 
 import (
-	"github.com/nikolaevnikita/go-api-test-app/internal/domain/models"
+	"context"
+
 	"github.com/nikolaevnikita/go-api-test-app/internal/domain/errors"
+	"github.com/nikolaevnikita/go-api-test-app/internal/domain/models"
 	"github.com/nikolaevnikita/go-api-test-app/internal/repository"
 
 	"github.com/go-playground/validator/v10"
@@ -75,4 +77,10 @@ func (ts *TaskService) DeleteTask(tID string) error {
 		return err
 	}
 	return nil
+}
+
+// MARK: Stop
+
+func (ts *TaskService) Stop(ctx context.Context) error {
+	return ts.repository.Stop(ctx)
 }

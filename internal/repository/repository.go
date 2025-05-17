@@ -1,5 +1,7 @@
 package repository
 
+import "context"
+
 type ItemID = string
 
 type Repository[T any] interface {
@@ -8,5 +10,7 @@ type Repository[T any] interface {
 	Create(item T) error
 	Update(id ItemID, item T) error
 	Delete(id ItemID) error
+
+	Stop(ctx context.Context) error
 }
   

@@ -108,3 +108,10 @@ func (r *PostgreSQLTaskRepository) Delete(id ItemID) error {
 
 	return nil
 }
+
+// MARK: Stop
+
+func (r *PostgreSQLTaskRepository) Stop(ctx context.Context) error {
+	return r.db.Close(ctx)
+}
+

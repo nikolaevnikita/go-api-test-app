@@ -1,8 +1,10 @@
 package repository
 
 import (
-	"github.com/nikolaevnikita/go-api-test-app/internal/domain/models"
+	"context"
+
 	"github.com/nikolaevnikita/go-api-test-app/internal/domain/errors"
+	"github.com/nikolaevnikita/go-api-test-app/internal/domain/models"
 )
 
 type InMemoryRepository[T models.Identifiable] struct {
@@ -62,6 +64,13 @@ func (r *InMemoryRepository[T]) Delete(id ItemID) error {
 		return err
 	}
 	delete(r.storage, id)
+	return nil
+}
+
+// MARK: Stop
+
+func (r *InMemoryRepository[T]) Stop(ctx context.Context) error {
+	// TODO: Добавить выгрузку в файл и восстановление хранилища из файла
 	return nil
 }
 

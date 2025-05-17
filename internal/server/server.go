@@ -1,11 +1,14 @@
 package server
 
 import (
+	"context"
+
 	"github.com/nikolaevnikita/go-api-test-app/internal/config"
 	"github.com/nikolaevnikita/go-api-test-app/internal/services"
 
 	"fmt"
 	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -42,6 +45,24 @@ func New(
 
 func (s *ServerApi) Start() error {
 	return s.server.ListenAndServe()
+}
+
+func (s *ServerApi) Stop(ctx context.Context) []error {
+	var stopErrors []error
+	
+	if err := s.server.Shutdown(ctx); err != nil {
+        stopErrors = append(stopErrors, err)
+    }
+
+	if err := s.taskService.Stop(ctx); err != nil {
+        stopErrors = append(stopErrors, err)
+    }
+
+	if err := s.userService.Stop(ctx); err != nil {
+        stopErrors = append(stopErrors, err)
+    }
+
+	return stopErrors
 }
 
 // MARK: Private methods
