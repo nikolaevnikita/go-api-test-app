@@ -1,6 +1,8 @@
 package app
 
 import (
+	"sync"
+
 	"github.com/nikolaevnikita/go-api-test-app/internal/config"
 	"github.com/nikolaevnikita/go-api-test-app/internal/domain/models"
 	"github.com/nikolaevnikita/go-api-test-app/internal/logger"
@@ -9,8 +11,9 @@ import (
 	"github.com/nikolaevnikita/go-api-test-app/internal/services"
 
 	"context"
+
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-    _ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 type App struct {
@@ -32,11 +35,35 @@ func NewApp(config *config.Config) *App {
 	}
 }
 
-func (app *App) Start() error {
-	if err := app.serverApi.Start(); err != nil {
-		return err
+func (app *App) Start(ctx context.Context) {
+	log := logger.Get()
+	wg := sync.WaitGroup{}
+	
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<- ctx.Done()
+		app.Stop(ctx)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := app.serverApi.Start(); err != nil {
+			log.Error().Err(err).Msg("server failed")
+		}	
+	}()
+
+	wg.Wait()
+}
+
+func (app *App) Stop(ctx context.Context) {
+	log := logger.Get()
+	log.Debug().Msg("stop App")
+	errors := app.serverApi.Stop(ctx)
+	for _, err := range errors {
+		log.Error().Err(err).Msg("failed to stop App")
 	}
-	return nil
 }
 
 // MARK: Private methods
@@ -61,7 +88,8 @@ func provideRepositories(config *config.Config) (repository.Repository[models.Ta
 		if err != nil {
 			log.Warn().Err(err).Msg("failed to connect to task db")
 		} else {
-			taskRepository = dbTaskRepo
+			batchDeletionDbTaskRepo := repository.NewBatchTaskDeletionSQLRepositoryWrapper(*dbTaskRepo)
+			taskRepository = batchDeletionDbTaskRepo
 		}
 
 		dbUserRepo, err := repository.NewPostgreSQLUserRepository(context.Background(), config.DbDsn)

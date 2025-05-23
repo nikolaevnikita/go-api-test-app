@@ -103,3 +103,9 @@ func (r *PostgreSQLUserRepository) Delete(id ItemID) error {
 
 	return nil
 }
+
+// MARK: Stop
+
+func (r *PostgreSQLUserRepository) Stop(ctx context.Context) error {
+	return r.db.Close(ctx)
+}

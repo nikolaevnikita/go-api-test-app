@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     title text NOT NULL,
     description text NOT NULL,
     status text NOT NULL,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
     UNIQUE(title)
 );
 

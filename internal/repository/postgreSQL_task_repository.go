@@ -35,10 +35,10 @@ func (r *PostgreSQLTaskRepository) Get(id ItemID) (*models.Task, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer cancel()
 
-	row := r.db.QueryRow(ctx, "SELECT * from tasks WHERE tid = $1", id)
+	row := r.db.QueryRow(ctx, "SELECT * from tasks WHERE tid = $1 AND deleted = FALSE", id)
 
 	var task models.Task
-	err := row.Scan(&task.TID, &task.Title, &task.Description, &task.Status)
+	err := row.Scan(&task.TID, &task.Title, &task.Description, &task.Status, &task.Status)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			err = projectErrors.ErrNotFound
@@ -53,7 +53,7 @@ func (r *PostgreSQLTaskRepository) GetAll() ([]*models.Task, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer cancel()
 
-	rows, err := r.db.Query(ctx, "SELECT * FROM tasks")
+	rows, err := r.db.Query(ctx, "SELECT * FROM tasks WHERE deleted = FALSE")
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (r *PostgreSQLTaskRepository) GetAll() ([]*models.Task, error) {
 	var tasks []*models.Task
 	for rows.Next() {
 		var task models.Task
-		if err := rows.Scan(&task.TID, &task.Title, &task.Description, &task.Status); err != nil {
+		if err := rows.Scan(&task.TID, &task.Title, &task.Description, &task.Status, &task.Deleted); err != nil {
 			return nil, err
 		}
 		tasks = append(tasks, &task)
@@ -74,8 +74,8 @@ func (r *PostgreSQLTaskRepository) Create(item models.Task) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
 	defer cancel()
 
-	insertTaskRequest := "INSERT INTO tasks (tid, title, description, status) VALUES ($1, $2, $3, $4)"
-	_, err := r.db.Exec(ctx, insertTaskRequest, item.TID, item.Title, item.Description, item.Status)
+	insertTaskRequest := "INSERT INTO tasks (tid, title, description, status, deleted) VALUES ($1, $2, $3, $4, $5)"
+	_, err := r.db.Exec(ctx, insertTaskRequest, item.TID, item.Title, item.Description, item.Status, false)
 	if err != nil {
 		return err
 	}
@@ -108,3 +108,10 @@ func (r *PostgreSQLTaskRepository) Delete(id ItemID) error {
 
 	return nil
 }
+
+// MARK: Stop
+
+func (r *PostgreSQLTaskRepository) Stop(ctx context.Context) error {
+	return r.db.Close(ctx)
+}
+

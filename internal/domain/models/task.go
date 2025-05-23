@@ -5,6 +5,7 @@ type Task struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	Status      string    `json:"status"`
+	Deleted		bool      `json:"-"`
 }
 
 func (t Task) ID() string {
