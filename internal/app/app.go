@@ -88,7 +88,8 @@ func provideRepositories(config *config.Config) (repository.Repository[models.Ta
 		if err != nil {
 			log.Warn().Err(err).Msg("failed to connect to task db")
 		} else {
-			taskRepository = dbTaskRepo
+			batchDeletionDbTaskRepo := repository.NewBatchTaskDeletionSQLRepositoryWrapper(*dbTaskRepo)
+			taskRepository = batchDeletionDbTaskRepo
 		}
 
 		dbUserRepo, err := repository.NewPostgreSQLUserRepository(context.Background(), config.DbDsn)
